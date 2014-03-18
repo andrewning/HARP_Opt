@@ -1,5 +1,8 @@
 *.py[cod]
 
+# SNOPT
+SNOPT_*.out
+
 # OpenMDAO
 openmdao_log.txt
 
