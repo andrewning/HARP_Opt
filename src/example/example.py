@@ -9,6 +9,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 import os
+from sys import stdout
 
 from harpopt import HARPOptCCBlade
 
@@ -117,6 +118,28 @@ rotor.driver.run_iteration()
 
 # run optimization
 rotor.run()
+
+
+def printArray(array):
+    stdout.write(' [')
+    array.tofile(stdout, sep=', ')
+    stdout.write(']')
+    return ''
+
+
+# print some results
+print
+print '--- objective ---'
+print 'AEP_initial =', rotor.AEP0
+print 'AEP_optimized =', rotor.AEP
+print '% improvement =', (rotor.AEP-rotor.AEP0)/rotor.AEP0*100
+print
+print '--- design variables ---'
+print 'rotor.r_max_chord =', rotor.r_max_chord
+print 'rotor.chord_sub =', printArray(rotor.chord_sub)
+print 'rotor.theta_sub =', printArray(rotor.theta_sub)
+print 'rotor.control.tsr =', rotor.control.tsr
+print
 
 
 

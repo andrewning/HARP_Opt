@@ -47,7 +47,7 @@ class HARPOptCCBlade(Assembly):
                                    'Function precision': 1e-8,
                                    'Iterations limit': 500,
                                    'Print file': 'harpopt_snopt.out',
-                                   'Summary file': 'harpopt_snopt_summary.out'}}
+                                   'Summary file': 'harpopt_snopt_summary.out'}
         else:
             self.replace('driver', SLSQPdriver())
             self.driver.accuracy = 1.0e-6
