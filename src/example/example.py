@@ -42,7 +42,7 @@ rotor.B = 3  # (Int): number of blades
 # -------------------------------------
 
 # ------------- airfoils ------------
-basepath = '5MW_AFFiles'
+basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '5MW_AFFiles')
 
 # load all airfoils
 airfoil_types = [0]*8
