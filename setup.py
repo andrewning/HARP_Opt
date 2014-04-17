@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name='HARP_Opt',
-    version='0.1.0',
+    version='4.0.0',
     description='Horizontal Axis Rotor Performance Optimization',
     author='S. Andrew Ning',
     author_email='andrew.ning@nrel.gov',
