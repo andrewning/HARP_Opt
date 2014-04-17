@@ -22,11 +22,11 @@ from rotorse.rotoraerodefaults import common_io_with_ccblade, common_configure_w
 
 class HARPOptCCBlade(Assembly):
 
-    def __init__(self, varspeed=True, varpitch=True, cdf_type='weibull', use_snopt=False):
+    def __init__(self, varspeed=True, varpitch=True, cdf_type='weibull', optimizer='slsqp'):
         self.varspeed = varspeed
         self.varpitch = varpitch
-        self.use_snopt = use_snopt
         self.cdf_type = cdf_type
+        self.optimizer = optimizer
         super(HARPOptCCBlade, self).__init__()
 
 
@@ -37,10 +37,9 @@ class HARPOptCCBlade(Assembly):
         # used for normalization of objective
         self.add('AEP0', Float(1.0, iotype='in', desc='used for normalization'))
 
-        if self.use_snopt:
+        if self.optimizer == 'snopt':
             self.replace('driver', pyOptDriver())
             self.driver.optimizer = 'SNOPT'
-            # self.driver.optimizer = 'PSQP'
             self.driver.options = {'Major feasibility tolerance': 1e-6,
                                    'Minor feasibility tolerance': 1e-6,
                                    'Major optimality tolerance': 1e-5,
@@ -48,10 +47,20 @@ class HARPOptCCBlade(Assembly):
                                    'Iterations limit': 500,
                                    'Print file': 'harpopt_snopt.out',
                                    'Summary file': 'harpopt_snopt_summary.out'}
-        else:
+        elif self.optimizer == 'psqp':
+            self.replace('driver', pyOptDriver())
+            self.driver.optimizer = 'PSQP'
+            # self.driver.options = {#TODO
+            # }
+
+        elif self.optimizer == 'slsqp':
             self.replace('driver', SLSQPdriver())
             self.driver.accuracy = 1.0e-6
             self.driver.maxiter = 500
+
+        else:
+            print 'invalid optimizer specified'
+            exit()
 
         # objective
         self.driver.add_objective('-aep.AEP/AEP0')  # maximize AEP

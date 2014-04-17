@@ -7,21 +7,23 @@ Created by Andrew Ning on 2014-03-18.
 Copyright (c) NREL. All rights reserved.
 """
 
+# ---- imports ----
 import numpy as np
 import os
 from sys import stdout
 
 from harpopt import HARPOptCCBlade
+# ---------------
 
-# ----- options ----------
+# ---- options ----------
 varspeed = True
 varpitch = True
 cdf_type = 'rayleigh'
-use_snopt = True
+optimizer = 'snopt'
 # ------------------------
 
-# --- instantiate rotor object -------
-rotor = HARPOptCCBlade(varspeed, varpitch, cdf_type, use_snopt)
+# ---- instantiate rotor object -------
+rotor = HARPOptCCBlade(varspeed, varpitch, cdf_type, optimizer)
 # ------------------------------------
 
 
@@ -29,7 +31,7 @@ rotor = HARPOptCCBlade(varspeed, varpitch, cdf_type, use_snopt)
 # (under the default setup) and the value you supply will be used as a starting point
 
 
-# ------- rotor geometry ------------
+# ---- rotor geometry ------------
 rotor.r_max_chord = 0.23577  # **dv** (Float): location of second control point (generally also max chord)
 rotor.chord_sub = [3.2612, 4.5709, 3.3178, 1.4621]  # **dv** (Array, m): chord at control points
 rotor.theta_sub = [13.2783, 7.46036, 2.89317, -0.0878099]  # **dv** (Array, deg): twist at control points
@@ -41,7 +43,7 @@ rotor.yaw = 0.0  # (Float, deg): yaw error
 rotor.B = 3  # (Int): number of blades
 # -------------------------------------
 
-# ------------- airfoils ------------
+# ---- airfoils ------------
 basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '5MW_AFFiles')
 
 # load all airfoils
@@ -70,7 +72,7 @@ rotor.r_af = np.array([0.02222276, 0.06666667, 0.11111057, 0.16666667, 0.2333333
 rotor.idx_cylinder = 3  # (Int): index in r_af where cylinder section ends
 # -------------------------------------
 
-# ------- site characteristics --------
+# ---- site characteristics --------
 rotor.rho = 1.225  # (Float, kg/m**3): density of air
 rotor.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
 rotor.shearExp = 0.2  # (Float): shear exponent
@@ -81,7 +83,7 @@ if cdf_type == 'weibull':
 # -------------------------------------
 
 
-# ------- control settings ------------
+# ---- control settings ------------
 rotor.control.Vin = 3.0  # (Float, m/s): cut-in wind speed
 rotor.control.Vout = 25.0  # (Float, m/s): cut-out wind speed
 rotor.control.ratedPower = 5e6  # (Float, W): rated power
@@ -95,12 +97,12 @@ else:
     rotor.control.Omega = 8.0    # (Float, rpm): fixed rotor rotation speed
 # -------------------------------------
 
-# ------ drivetrain model for efficiency --------
+# ---- drivetrain model for efficiency --------
 rotor.drivetrainType = 'geared'
 # -------------------------------------
 
 
-# ------- analysis options ------------
+# ---- analysis options ------------
 rotor.nSector = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
 rotor.npts_coarse_power_curve = 20  # (Int): number of points to evaluate aero analysis at
 rotor.npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
