@@ -1,4 +1,5 @@
 *.py[cod]
+*.out
 
 # SNOPT
 SNOPT_*.out
