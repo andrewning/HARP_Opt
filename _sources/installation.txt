@@ -1,0 +1,39 @@
+Installation
+------------
+
+.. admonition:: Prerequisites
+   :class: warning
+
+   Fortran compiler, Python, NumPy, SciPy
+
+Install PyOpt by following `these directions <http://www.pyopt.org/install.html>`_.  Note that PyOpt is not strictly necessary for running HARP_Opt.  However, it is highly recommended as it will give you access to a wider variety of optimizers, some of which are much better than what you can access by default.
+
+Install *and activate* OpenMDAO as described `here <http://openmdao.org/docs/getting-started/install.html>`_
+
+Install PyOpt as an OpenMDAO plugin
+
+.. code-block:: bash
+
+    > plugin install --github pyopt_driver
+
+Install HARP_Opt as an OpenMDAO plugin
+
+.. code-block:: bash
+
+    > python setup.py install
+
+(or ``python setup.py develop`` if you plan to make changes with the underlying implementation)
+
+Test the setup by running the example
+
+.. code-block:: bash
+
+    > python example/example.py
+
+Create your own scripts by starting with a copy of example.py
+
+
+.. only:: latex
+
+    To access an HTML version of this documentation that contains further details and links to the source code, open docs/index.html.
+

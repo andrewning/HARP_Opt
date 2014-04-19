@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Introduction &mdash; HARP_Opt 4.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '4.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="HARP_Opt 4.0.0 documentation" href="index.html" />
+    <link rel="next" title="2. Installation" href="installation.html" />
+    <link rel="prev" title="HARP-Opt" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="2. Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="HARP-Opt"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">HARP_Opt 4.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>1. Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>Version 4.0 of HARP_Opt, while similar in function, is a significant shift in implementation from past versions.  The major changes include moving the code-base from MATLAB to a Python, replacing the aerodynamic performance tool, allowing for any aerodynamic tool to be used within the same optimization framework, and allowing for decreased solution time made possible by using analytic gradients.</p>
+<p>The move to Python was done for several reasons.  The primary reason is for compatibility with NREL&#8217;s Systems Engineering tool: WISDEM.  This allows HARP_Opt to be easily extended to do more sophisticated analyses beyond simply rotor aerodynamic optimization.  WISDEM provides complimentary tools for rotor structural analysis, drivetrains, towers, and various cost models.  These additional models contained in WISDEM are expected to be released later this year (2014).  HARP_Opt represents the simplest case, where only the rotor is optimized, and only aerodynamic performance is considered.  Switching to Python affords additional benefits.  Python allows for straightforward high-level connections between codes written in Fortran and C/C++, without having to resort to file i/o.  By adopting Python we can also make use of NASA&#8217;s OpenMDAO framework.  OpenMDAO makes it much easier to compute accurate system-level gradients, particularly for problems with a large number of components.  It also provides a wide variety of optimizers and solvers.   Finally, the Python interpreter is freely available, and does not require purchasing any licenses.</p>
+<p>The aerodynamic analysis tool has been replaced with CCBlade.  CCBlade solves the same blade element momentum equations, but with a new solution method that has guaranteed convergence.  This is important to allow robust use of gradient-based optimization.  Additionally, analytic gradients have been derived for CCBlade, as well as for all supporting components in the analysis set.  Analytic system-level gradients allows for much faster and reliable optimization convergence.  HARP_Opt is written in Python, but iteration-heavy sections of CCBlade are written in Fortran in order to improve performance.  Other aerodynamic performance tools (instead of CCBlade) can be used with only minimal changes.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">HARP-Opt</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="next chapter">2. Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/intro.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="2. Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="HARP-Opt"
+             >previous</a> |</li>
+        <li><a href="index.html">HARP_Opt 4.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Apr 16, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

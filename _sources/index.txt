@@ -1,0 +1,20 @@
+HARP-Opt
+=======
+
+.. only:: html
+
+    HARP_Opt (**H**\orizontal **A**\xis **R**\otor **P**\erformance **O**\ptimization) is a tool for rotor optimization. Aerodynamic performance is computed using `CCBlade <http://wind.nrel.gov/designcodes/simulators/ccblade/>`_, a blade element momentum code with guaranteed convergence. Analytic gradients are provided for all components in the analysis so that gradient-based optimization can be used efficiently. A number of open-source and commercial optimizers can be used as made available through the `OpenMDAO <http://openmdao.org/>`_ framework. While only basic aerodynamic performance is included in this version, the framework allows HARP_Opt to be integrated and expanded with other `NREL System Engineering <http://www.nrel.gov/wind/systems_engineering.html>`_ tools. These tools incluee rotor structural analysis, nacelle/drivetrain analysis, tower aero/structural analysis, and various cost models. These additional models are scheduled to be released later this year, and allow for more complete turbine optimization studies.
+
+    Author: `S. Andrew Ning <mailto:andrew.ning@nrel.gov>`_
+
+    .. rubric:: Table of Contents
+
+
+.. toctree::
+    :numbered:
+    :maxdepth: 2
+
+    intro
+    installation
+    tutorial
+

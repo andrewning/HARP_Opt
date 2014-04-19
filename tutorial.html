@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>3. Tutorial &mdash; HARP_Opt 4.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nrel.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '4.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="HARP_Opt 4.0.0 documentation" href="index.html" />
+    <link rel="prev" title="2. Installation" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="2. Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">HARP_Opt 4.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<span id="tutorial-label"></span><h1>3. Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>Some explanation</p>
+<div class="section" id="basic-usage">
+<span id="id1"></span><h2>3.1. Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>This example follows the code provided in <tt class="docutils literal"><span class="pre">examples/example.py</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
+
+<span class="kn">from</span> <span class="nn">harpopt</span> <span class="kn">import</span> <span class="n">HARPOptCCBlade</span>
+</pre></div>
+</div>
+<p>System imports include <tt class="docutils literal"><span class="pre">numpy</span></tt> for handling arrays, <tt class="docutils literal"><span class="pre">os</span></tt> for reading aerodynamic files, <tt class="docutils literal"><span class="pre">sys</span></tt> for writing some results to standard out.  The local import is a preconfigured optimization setup for rotor aerodynamics.  This particular setup uses CCBlade for the aerodyamic analysis.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">varspeed</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">varpitch</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="n">cdf_type</span> <span class="o">=</span> <span class="s">&#39;rayleigh&#39;</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="s">&#39;snopt&#39;</span>
+</pre></div>
+</div>
+<p>High-level configuration options are then set.  The machine may be any of the four combinations of variable/fixed speed, variable/fixed pitch.  It should be noted for this case, which is aerodynamic only, that if a variable speed machine is chosen there is no difference between choosing variable or fixed pitch.  The tupe of cumulative distribution function describing the wind speed at the site must be chosen.  The default implementation provides for <tt class="docutils literal"><span class="pre">rayleigh</span></tt> or <tt class="docutils literal"><span class="pre">weibull</span></tt>.  Any custom CDF can be added as desired.  The three provided choices for optimizers include <tt class="docutils literal"><span class="pre">snopt</span></tt>, <tt class="docutils literal"><span class="pre">psqp</span></tt>, <tt class="docutils literal"><span class="pre">slsqp</span></tt>.  <tt class="docutils literal"><span class="pre">snopt</span></tt> is by far the most capable and robust, but it requires a separate paid license and must be installed by the user.  <tt class="docutils literal"><span class="pre">psqp</span></tt> is freely availble through pyOpt and would be the next recommended option.  <tt class="docutils literal"><span class="pre">slsqp</span></tt> is not particularly reliable, but will be the fall back if pyOpt was not installed.  pyOpt does provided other alternative optimizers, and really any optimizer can be used by switching out the driver in OpenMDAO with a custom driver.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rotor</span><span class="o">.</span><span class="n">r_max_chord</span> <span class="o">=</span> <span class="mf">0.23577</span>  <span class="c"># **dv** (Float): location of second control point (generally also max chord)</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">chord_sub</span> <span class="o">=</span> <span class="p">[</span><span class="mf">3.2612</span><span class="p">,</span> <span class="mf">4.5709</span><span class="p">,</span> <span class="mf">3.3178</span><span class="p">,</span> <span class="mf">1.4621</span><span class="p">]</span>  <span class="c"># **dv** (Array, m): chord at control points</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">theta_sub</span> <span class="o">=</span> <span class="p">[</span><span class="mf">13.2783</span><span class="p">,</span> <span class="mf">7.46036</span><span class="p">,</span> <span class="mf">2.89317</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0878099</span><span class="p">]</span>  <span class="c"># **dv** (Array, deg): twist at control points</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">Rhub</span> <span class="o">=</span> <span class="mf">1.5</span>  <span class="c"># (Float, m): hub radius</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">Rtip</span> <span class="o">=</span> <span class="mf">63.0</span>  <span class="c"># (Float, m): tip radius</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">precone</span> <span class="o">=</span> <span class="mf">2.5</span>  <span class="c"># (Float, deg): precone angle</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">tilt</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span>  <span class="c"># (Float, deg): shaft tilt</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">yaw</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># (Float, deg): yaw error</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c"># (Int): number of blades</span>
+</pre></div>
+</div>
+<p>Parameters defining the rotor geometry are defined next.  In the comments <strong>dv</strong> notes that the variable is a design variable.  This means it will be optimized by the optmizer, but you need to specify a value here which will be used as a starting point.  <a class="pageref" href="#chord-param">Figure  1</a> shows the parameterization of the chord distribution.  You define the chord at four locations, and an Akima spline is used to define the chord at intermediate locations.  The location of the second control point <span class="math">\(r_2\)</span> allows for the position of that control point to change.  <tt class="docutils literal"><span class="pre">r_max_chord</span></tt> denotes the location of <span class="math">\(r_2\)</span>, for unit radius.  <tt class="docutils literal"><span class="pre">chord_sub</span></tt> denotes the values of the chord at the four control points starting from the root.  <tt class="docutils literal"><span class="pre">theta_sub</span></tt> defines the twist distribution as shown in <a class="pageref" href="#theta-param">Figure  2</a>.  A constant value is used across the cylindrical section, with an Akima spline over the outer portion.  <tt class="docutils literal"><span class="pre">Rhub</span></tt> and <tt class="docutils literal"><span class="pre">Rtip</span></tt> dimension the blade.  Positive precone tilts the blades upwind.  Positive tilt rotates the blades upward for an upwind machine (and vice-versa for a downwind machine).  Yaw and tilt are accounted for only crudely through the blade element portion.</p>
+<div class="figure align-left" id="chord-param">
+<a class="reference internal image-reference" href="_images/chord-param2.png"><img alt="_images/chord-param2.png" src="_images/chord-param2.png" style="width: 5in;" /></a>
+<p class="caption">Figure 1: Parameterization of chord distribution.</p>
+</div>
+<div class="figure align-center" id="theta-param">
+<a class="reference internal image-reference" href="_images/theta-param2.png"><img alt="_images/theta-param2.png" src="_images/theta-param2.png" style="width: 5in;" /></a>
+<p class="caption">Figure 2: Parameterization of twist distribution.</p>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">basepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span> <span class="s">&#39;5MW_AFFiles&#39;</span><span class="p">)</span>
+
+<span class="c"># load all airfoils</span>
+<span class="n">airfoil_types</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;Cylinder1.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;Cylinder2.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;DU40_A17.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;DU35_A17.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;DU30_A17.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;DU25_A17.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;DU21_A17.dat&#39;</span>
+<span class="n">airfoil_types</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">basepath</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s">&#39;NACA64_A17.dat&#39;</span>
+
+<span class="c"># place at appropriate radial stations</span>
+<span class="n">af_idx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">af_idx</span><span class="p">)</span>
+<span class="n">af</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">n</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="n">af</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">airfoil_types</span><span class="p">[</span><span class="n">af_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+<span class="n">rotor</span><span class="o">.</span><span class="n">airfoil_files</span> <span class="o">=</span> <span class="n">af</span>  <span class="c"># (List): paths to AeroDyn-style airfoil files</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">r_af</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.02222276</span><span class="p">,</span> <span class="mf">0.06666667</span><span class="p">,</span> <span class="mf">0.11111057</span><span class="p">,</span> <span class="mf">0.16666667</span><span class="p">,</span> <span class="mf">0.23333333</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.36666667</span><span class="p">,</span>
+    <span class="mf">0.43333333</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.56666667</span><span class="p">,</span> <span class="mf">0.63333333</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.76666667</span><span class="p">,</span> <span class="mf">0.83333333</span><span class="p">,</span> <span class="mf">0.88888943</span><span class="p">,</span>
+    <span class="mf">0.93333333</span><span class="p">,</span> <span class="mf">0.97777724</span><span class="p">])</span>    <span class="c"># (Array, m): locations where airfoils are defined on unit radius</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">idx_cylinder</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c"># (Int): index in r_af where cylinder section ends</span>
+</pre></div>
+</div>
+<p>The airfoils are mostly easily defined by using AeroDyn files (other formats can be used but this requires some custom configuration).  <tt class="docutils literal"><span class="pre">airfoil_files</span></tt> expects a list of paths to the files, listed in order for the radial stations along the blade from root to tip.  <tt class="docutils literal"><span class="pre">r_af</span></tt> defines the actual locations of these airfoils for a unit radius blade.  <tt class="docutils literal"><span class="pre">idx_cylinder</span></tt> corresponds to the location in <tt class="docutils literal"><span class="pre">r_af</span></tt> where the cylindrical section ends.  So for the example, the cylindrical section would extend from the hub (1.5 m) to (1.5 + (63-1.5)*0.16667 m)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rotor</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="mf">1.225</span>  <span class="c"># (Float, kg/m**3): density of air</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.81206e-5</span>  <span class="c"># (Float, kg/m/s): dynamic viscosity of air</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">shearExp</span> <span class="o">=</span> <span class="mf">0.2</span>  <span class="c"># (Float): shear exponent</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">hubHt</span> <span class="o">=</span> <span class="mf">80.0</span>  <span class="c"># (Float, m)</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">cdf_mean_wind_speed</span> <span class="o">=</span> <span class="mf">6.0</span>  <span class="c"># (Float, m/s): mean wind speed of site cumulative distribution function</span>
+<span class="k">if</span> <span class="n">cdf_type</span> <span class="o">==</span> <span class="s">&#39;weibull&#39;</span><span class="p">:</span>
+    <span class="n">rotor</span><span class="o">.</span><span class="n">weibull_shape_factor</span> <span class="o">=</span> <span class="mf">2.0</span>  <span class="c"># (Float): shape factor of weibull distribution</span>
+</pre></div>
+</div>
+<p>Here the density and viscosity of the fluid are defined, as well as shear and hub height if desired.  For both the <tt class="docutils literal"><span class="pre">rayleigh</span></tt> and <tt class="docutils literal"><span class="pre">weibull</span></tt> wind speed distribution types, the mean wind speed must be defined.  If using the <tt class="docutils literal"><span class="pre">weibull</span></tt> distribution you must additionally supply the shape factor.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">Vin</span> <span class="o">=</span> <span class="mf">3.0</span>  <span class="c"># (Float, m/s): cut-in wind speed</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">Vout</span> <span class="o">=</span> <span class="mf">25.0</span>  <span class="c"># (Float, m/s): cut-out wind speed</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">ratedPower</span> <span class="o">=</span> <span class="mf">5e6</span>  <span class="c"># (Float, W): rated power</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">pitch</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)</span>
+
+<span class="k">if</span> <span class="n">varspeed</span><span class="p">:</span>
+    <span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">minOmega</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># (Float, rpm): minimum allowed rotor rotation speed</span>
+    <span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">maxOmega</span> <span class="o">=</span> <span class="mf">12.0</span>  <span class="c"># (Float, rpm): maximum allowed rotor rotation speed</span>
+    <span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">tsr</span> <span class="o">=</span> <span class="mf">7.55</span>  <span class="c"># **dv** (Float): tip-speed ratio in Region 2 (should be optimized externally)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">rotor</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">Omega</span> <span class="o">=</span> <span class="mf">8.0</span>    <span class="c"># (Float, rpm): fixed rotor rotation speed</span>
+</pre></div>
+</div>
+<p>For all machine types the cut-in speed, cut-out speed, rated power, and pitch must be supplied.  For fixed pitch machines, the pitch setting is constant.  For variable pitch machines, the pitch is only fixed in Region 2.  For variable speed machines you need to define the minimum and and maximum values Omega may reach.  The max speed is generally used as a tip speed constraint.  The tip-speed ratio in Region 2 must also be defined as a starting point, but it will be optimized.  If the machine is fixed speed, then the rotation speed must be specified.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rotor</span><span class="o">.</span><span class="n">drivetrainType</span> <span class="o">=</span> <span class="s">&#39;geared&#39;</span>
+</pre></div>
+</div>
+<p>Only one drivetrain model is currently supplied.  This is used to compute efficiency losses for estimating the total torque (not just aerodynamic torque).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rotor</span><span class="o">.</span><span class="n">nSector</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c"># (Int): number of sectors to divide rotor face into in computing thrust and power</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">npts_coarse_power_curve</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c"># (Int): number of points to evaluate aero analysis at</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">npts_spline_power_curve</span> <span class="o">=</span> <span class="mi">200</span>  <span class="c"># (Int): number of points to use in fitting spline to power curve</span>
+<span class="n">rotor</span><span class="o">.</span><span class="n">AEP_loss_factor</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c"># (Float): availability and other losses (soiling, array, etc.)</span>
+</pre></div>
+</div>
+<p>Various additional simulation options are available.  The performance will be estimated at nSector locations along the rotor azimuth.  For example, if <tt class="docutils literal"><span class="pre">nSector==4</span></tt> then the rotor disk will be discretized into four sections with aerodynamic loading evaluated at 0, 90, 180, and 270 degrees azimuth and then averaged across the disk.  If the inflow is uniform (no shear, no yaw, etc.), then there is no benefit to using more than one sector.  <tt class="docutils literal"><span class="pre">npts_coarse_power_curve</span></tt> defines at how may wind speeds is the aerodynamic code actually run.  Most of the time of computation is involved here, so changing this parameter involves a tradeoff in accuracy and speed.  After the simulation is run at <tt class="docutils literal"><span class="pre">npts_coarse_power_curve</span></tt> number of points, a spline is fit to the values at <tt class="docutils literal"><span class="pre">npts_coarse_power_curve</span></tt> points in order to allow for more accurate integration.  The spline is very fast, so there is very little penalty to using a large number of points here.  The AEP_loss_factor is used to account for array losses, availability, etc.  For aero only optimization where AEP is the objective, changing the loss factor will not affect the optimal design solution, but will only affect the magnitude of the final AEP.</p>
+<p>This marks the end of the inputs, and nothing beyond this needs to be modified.  The objective is normalized for better scaling, the optimization is run, and the final objective and design variables are printed.  Iteration history will also be shown.  If you use <tt class="docutils literal"><span class="pre">snopt</span></tt> as the optimizer, additional iteration history is availble. To follow convergence progress type the following command in the terminal:</p>
+<div class="highlight-bash"><div class="highlight"><pre>&gt; tail -f harpopt_snopt.out
+</pre></div>
+</div>
+</div>
+<div class="section" id="advanced-usage">
+<h2>3.2. Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this headline">¶</a></h2>
+<p>Only a brief overview of advanced usage is described here.  Additional customization requires familiarity with Python and <a class="reference external" href="http://openmdao.org">OpenMDAO</a>.</p>
+<div class="section" id="optimization-problem-changes">
+<h3>3.2.1. Optimization Problem Changes<a class="headerlink" href="#optimization-problem-changes" title="Permalink to this headline">¶</a></h3>
+<p>Modify <tt class="docutils literal"><span class="pre">src/harpopt.py</span></tt> to use additional optimizers beyond those provided.  If the optimizer you want is already made available by OpenMDAO or pyOpt, then adding them is straightforward.  If you want to use a completely different optimizer, this can also be done but you must write your own OpenMDAO Driver.</p>
+<p>In this assembly, the objective, design variables, and constraints are also defined.  You can change these as desired.</p>
+</div>
+<div class="section" id="analysis-method-changes">
+<h3>3.2.2. Analysis Method Changes<a class="headerlink" href="#analysis-method-changes" title="Permalink to this headline">¶</a></h3>
+<p>The framework is setup to allow easy swapping of the aerodynamic analysis tool (default: CCBlade), the drivetrain efficiency losses calculation (default: NREL cost and scaling model), and the site wind speed distribution (defaults: Rayleigh or Weibull).  Base classes for these modules are defined in <tt class="docutils literal"><span class="pre">src/rotoraero.py</span></tt>.</p>
+<p>To add a new aerodynamic module you will need to provide implementations for <tt class="docutils literal"><span class="pre">GeomtrySetupBase</span></tt> and <tt class="docutils literal"><span class="pre">AeroBase</span></tt>.  Examples are provided in <tt class="docutils literal"><span class="pre">src/rotoraerodefaults.py</span></tt> (<tt class="docutils literal"><span class="pre">CCBladeGeometry</span></tt> and <tt class="docutils literal"><span class="pre">CCBlade</span></tt>).  Note that the defaults all provide analytic gradients for all outputs.  Gradients can be estimated using finite differencing, but for best performance you should provide analytic gradients if possible.</p>
+<p>To add a new drivetrain efficiency loss model you need to implement <tt class="docutils literal"><span class="pre">DrivetrainLossesBase</span></tt>.  A specific example is provided in <tt class="docutils literal"><span class="pre">CSMDrivetrain</span></tt>.</p>
+<p>To add a new site wind speed cumulative distribution function you need to implement <tt class="docutils literal"><span class="pre">CDFBase</span></tt>.  Specific examples are provided in <tt class="docutils literal"><span class="pre">WeibullCDF</span></tt>, <tt class="docutils literal"><span class="pre">WeibullWithMeanCDF</span></tt>, and <tt class="docutils literal"><span class="pre">RayleighCDF</span></tt>.</p>
+<p>If the new models introduce a different set of variables then corresponding assemblies will need to be added, or the existing ones will need to modified to accommodate for the different models.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">3. Tutorial</a><ul>
+<li><a class="reference internal" href="#basic-usage">3.1. Basic Usage</a></li>
+<li><a class="reference internal" href="#advanced-usage">3.2. Advanced Usage</a><ul>
+<li><a class="reference internal" href="#optimization-problem-changes">3.2.1. Optimization Problem Changes</a></li>
+<li><a class="reference internal" href="#analysis-method-changes">3.2.2. Analysis Method Changes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">2. Installation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="2. Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">HARP_Opt 4.0.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, NREL.
+      Last updated on Apr 16, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.
+    </div>
+  </body>
+</html>

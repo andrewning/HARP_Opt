@@ -1,0 +1,112 @@
+.. _tutorial-label:
+
+Tutorial
+--------
+
+Some explanation
+
+.. _basic-usage:
+
+Basic Usage
+^^^^^^^^^^^^^^^
+
+This example follows the code provided in ``examples/example.py``.
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- imports
+    :end-before: # ------
+
+
+System imports include ``numpy`` for handling arrays, ``os`` for reading aerodynamic files, ``sys`` for writing some results to standard out.  The local import is a preconfigured optimization setup for rotor aerodynamics.  This particular setup uses CCBlade for the aerodyamic analysis.
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- options
+    :end-before: # ------
+
+High-level configuration options are then set.  The machine may be any of the four combinations of variable/fixed speed, variable/fixed pitch.  It should be noted for this case, which is aerodynamic only, that if a variable speed machine is chosen there is no difference between choosing variable or fixed pitch.  The tupe of cumulative distribution function describing the wind speed at the site must be chosen.  The default implementation provides for ``rayleigh`` or ``weibull``.  Any custom CDF can be added as desired.  The three provided choices for optimizers include ``snopt``, ``psqp``, ``slsqp``.  ``snopt`` is by far the most capable and robust, but it requires a separate paid license and must be installed by the user.  ``psqp`` is freely availble through pyOpt and would be the next recommended option.  ``slsqp`` is not particularly reliable, but will be the fall back if pyOpt was not installed.  pyOpt does provided other alternative optimizers, and really any optimizer can be used by switching out the driver in OpenMDAO with a custom driver.
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- rotor geometry
+    :end-before: # ------
+
+Parameters defining the rotor geometry are defined next.  In the comments **dv** notes that the variable is a design variable.  This means it will be optimized by the optmizer, but you need to specify a value here which will be used as a starting point.  :num:`Figure #chord-param` shows the parameterization of the chord distribution.  You define the chord at four locations, and an Akima spline is used to define the chord at intermediate locations.  The location of the second control point :math:`r_2` allows for the position of that control point to change.  ``r_max_chord`` denotes the location of :math:`r_2`, for unit radius.  ``chord_sub`` denotes the values of the chord at the four control points starting from the root.  ``theta_sub`` defines the twist distribution as shown in :num:`Figure #theta-param`.  A constant value is used across the cylindrical section, with an Akima spline over the outer portion.  ``Rhub`` and ``Rtip`` dimension the blade.  Positive precone tilts the blades upwind.  Positive tilt rotates the blades upward for an upwind machine (and vice-versa for a downwind machine).  Yaw and tilt are accounted for only crudely through the blade element portion.
+
+
+
+.. _chord-param:
+
+.. figure:: /images/chord-param2.*
+    :width: 5in
+    :align: left
+
+    Parameterization of chord distribution.
+
+.. _theta-param:
+
+.. figure:: /images/theta-param2.*
+    :width: 5in
+    :align: center
+
+    Parameterization of twist distribution.
+
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- airfoils
+    :end-before: # ------
+
+The airfoils are mostly easily defined by using AeroDyn files (other formats can be used but this requires some custom configuration).  ``airfoil_files`` expects a list of paths to the files, listed in order for the radial stations along the blade from root to tip.  ``r_af`` defines the actual locations of these airfoils for a unit radius blade.  ``idx_cylinder`` corresponds to the location in ``r_af`` where the cylindrical section ends.  So for the example, the cylindrical section would extend from the hub (1.5 m) to (1.5 + (63-1.5)*0.16667 m)
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- site char
+    :end-before: # ------
+
+Here the density and viscosity of the fluid are defined, as well as shear and hub height if desired.  For both the ``rayleigh`` and ``weibull`` wind speed distribution types, the mean wind speed must be defined.  If using the ``weibull`` distribution you must additionally supply the shape factor.
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- control
+    :end-before: # ------
+
+For all machine types the cut-in speed, cut-out speed, rated power, and pitch must be supplied.  For fixed pitch machines, the pitch setting is constant.  For variable pitch machines, the pitch is only fixed in Region 2.  For variable speed machines you need to define the minimum and and maximum values Omega may reach.  The max speed is generally used as a tip speed constraint.  The tip-speed ratio in Region 2 must also be defined as a starting point, but it will be optimized.  If the machine is fixed speed, then the rotation speed must be specified.
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- drivetrain
+    :end-before: # ------
+
+Only one drivetrain model is currently supplied.  This is used to compute efficiency losses for estimating the total torque (not just aerodynamic torque).
+
+.. literalinclude:: ../examples/example.py
+    :start-after: # ---- analysis options
+    :end-before: # ------
+
+Various additional simulation options are available.  The performance will be estimated at nSector locations along the rotor azimuth.  For example, if ``nSector==4`` then the rotor disk will be discretized into four sections with aerodynamic loading evaluated at 0, 90, 180, and 270 degrees azimuth and then averaged across the disk.  If the inflow is uniform (no shear, no yaw, etc.), then there is no benefit to using more than one sector.  ``npts_coarse_power_curve`` defines at how may wind speeds is the aerodynamic code actually run.  Most of the time of computation is involved here, so changing this parameter involves a tradeoff in accuracy and speed.  After the simulation is run at ``npts_coarse_power_curve`` number of points, a spline is fit to the values at ``npts_coarse_power_curve`` points in order to allow for more accurate integration.  The spline is very fast, so there is very little penalty to using a large number of points here.  The AEP_loss_factor is used to account for array losses, availability, etc.  For aero only optimization where AEP is the objective, changing the loss factor will not affect the optimal design solution, but will only affect the magnitude of the final AEP.
+
+This marks the end of the inputs, and nothing beyond this needs to be modified.  The objective is normalized for better scaling, the optimization is run, and the final objective and design variables are printed.  Iteration history will also be shown.  If you use ``snopt`` as the optimizer, additional iteration history is availble. To follow convergence progress type the following command in the terminal:
+
+.. code-block:: bash
+
+    > tail -f harpopt_snopt.out
+
+Advanced Usage
+^^^^^^^^^^^^^^^^^
+
+Only a brief overview of advanced usage is described here.  Additional customization requires familiarity with Python and `OpenMDAO <http://openmdao.org>`_.
+
+Optimization Problem Changes
++++++++++++++++++++++++++++++++++
+
+Modify ``src/harpopt.py`` to use additional optimizers beyond those provided.  If the optimizer you want is already made available by OpenMDAO or pyOpt, then adding them is straightforward.  If you want to use a completely different optimizer, this can also be done but you must write your own OpenMDAO Driver.
+
+In this assembly, the objective, design variables, and constraints are also defined.  You can change these as desired.
+
+Analysis Method Changes
+++++++++++++++++++++++++++++++++
+
+The framework is setup to allow easy swapping of the aerodynamic analysis tool (default: CCBlade), the drivetrain efficiency losses calculation (default: NREL cost and scaling model), and the site wind speed distribution (defaults: Rayleigh or Weibull).  Base classes for these modules are defined in ``src/rotoraero.py``.
+
+To add a new aerodynamic module you will need to provide implementations for ``GeomtrySetupBase`` and ``AeroBase``.  Examples are provided in ``src/rotoraerodefaults.py`` (``CCBladeGeometry`` and ``CCBlade``).  Note that the defaults all provide analytic gradients for all outputs.  Gradients can be estimated using finite differencing, but for best performance you should provide analytic gradients if possible.
+
+To add a new drivetrain efficiency loss model you need to implement ``DrivetrainLossesBase``.  A specific example is provided in ``CSMDrivetrain``.
+
+To add a new site wind speed cumulative distribution function you need to implement ``CDFBase``.  Specific examples are provided in ``WeibullCDF``, ``WeibullWithMeanCDF``, and ``RayleighCDF``.
+
+If the new models introduce a different set of variables then corresponding assemblies will need to be added, or the existing ones will need to modified to accommodate for the different models.
