@@ -15,7 +15,8 @@ Python, NumPy, SciPy, Fortran compiler
 
 ## Installation
 
-t
+Install PyOpt by following [these directions](http://www.pyopt.org/install.html).  Note that PyOpt is not strictly necessary for running HARP_Opt.  However, it is highly recommended as it will give you access to a wider variety of optimizers, some of which are much better than what you can access by default.
+
 Install *and activate* OpenMDAO as described [here](http://openmdao.org/docs/getting-started/install.html).  
 
 Install PyOpt as an OpenMDAO plugin
@@ -45,6 +46,6 @@ To check if installation was successful, run the unit tests
  -->
 ## Detailed Documentation
 
-Access the online version at <http://nrel-wisdem.github.io/CCBlade>
+Access documentation at <http://andrewning.github.io/HARP_Opt>
 
 
