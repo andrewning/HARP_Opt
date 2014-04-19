@@ -420,7 +420,22 @@ class WeibullWithMeanCDF(CDFBase):
 
         self.F = 1.0 - np.exp(-(self.x/A)**self.k)
 
-        # TODO: add gradients
+
+    def list_deriv_vars(self):
+
+        inputs = ('x',)
+        outputs = ('F',)
+
+        return inputs, outputs
+
+    def provideJ(self):
+
+        x = self.x
+        k = self.k
+        A = self.xbar / gamma(1.0 + 1.0/k)
+        J = np.diag(np.exp(-(x/A)**k)*(x/A)**(k-1)*k/A)
+
+        return J
 
 
 

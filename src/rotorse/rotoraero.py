@@ -282,7 +282,7 @@ class SetupRunFixedSpeed(Component):
 
     def list_deriv_vars(self):
 
-        inputs = ('',)
+        inputs = ('',)  # everything is constant
         outputs = ('',)
 
         return inputs, outputs
