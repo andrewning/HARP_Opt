@@ -492,7 +492,7 @@ def check_gradient(comp, fd='central', step_size=1e-6, tol=1e-6, display=False,
     if show_warnings:
         all_inputs = _explodeall(comp, vtype='inputs')
         all_outputs = _explodeall(comp, vtype='outputs')
-        reserved_inputs = ['missing_deriv_policy', 'directory', 'force_fd', 'force_execute']
+        reserved_inputs = ['missing_deriv_policy', 'directory', 'force_fd', 'force_execute', 'eval_only']
         reserved_outputs = ['derivative_exec_count', 'itername', 'exec_count']
         potential_missed_inputs = list(set(all_inputs) - set(reserved_inputs) - set(inputs))
         potential_missed_outputs = list(set(all_outputs) - set(reserved_outputs) - set(outputs))

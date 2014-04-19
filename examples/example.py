@@ -19,7 +19,7 @@ from harpopt import HARPOptCCBlade
 varspeed = True
 varpitch = True
 cdf_type = 'rayleigh'
-optimizer = 'snopt'
+optimizer = 'psqp'
 # ------------------------
 
 # ---- instantiate rotor object -------

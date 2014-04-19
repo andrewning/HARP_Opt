@@ -47,11 +47,14 @@ class HARPOptCCBlade(Assembly):
                                    'Iterations limit': 500,
                                    'Print file': 'harpopt_snopt.out',
                                    'Summary file': 'harpopt_snopt_summary.out'}
+
         elif self.optimizer == 'psqp':
             self.replace('driver', pyOptDriver())
             self.driver.optimizer = 'PSQP'
-            # self.driver.options = {#TODO
-            # }
+            self.driver.options = {'XMAX': 100.0,
+                                   'TOLG': 1e-4,
+                                   'MFV': 500,
+                                   'IFILE': 'harpopt_psqp.out'}
 
         elif self.optimizer == 'slsqp':
             self.replace('driver', SLSQPdriver())
@@ -80,6 +83,6 @@ class HARPOptCCBlade(Assembly):
         self.driver.recorders = [DumpCaseRecorder()]
 
 
-        if self.use_snopt:  # pyopt has an oustanding bug for unconstrained problems, so adding inconsequential constraint
+        if self.optimizer == 'snopt' or self.optimizer == 'psqp':  # pyopt has an oustanding bug for unconstrained problems, so adding inconsequential constraint
             self.driver.add_constraint('spline.r_max_chord > 0.0')
 
