@@ -663,6 +663,7 @@ def common_configure(assembly, varspeed, varpitch):
         assembly.connect('control.Vout', 'brent.upper_bound')
         assembly.brent.add_parameter('powercurve.Vrated', low=-1e-15, high=1e15)
         assembly.brent.add_constraint('powercurve.residual = 0')
+        assembly.brent.invalid_bracket_return = 1.0
 
 
     # connections to cdf
