@@ -9,7 +9,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 from math import pi, gamma
-from openmdao.main.datatypes.api import Int, Float, Array, Str, List, Enum, VarTree, Slot
+from openmdao.main.datatypes.api import Int, Float, Array, Str, List, Enum, VarTree, Bool
 from openmdao.main.api import Component, Assembly
 
 from ccblade import CCAirfoil, CCBlade as CCBlade_PY
@@ -184,6 +184,10 @@ class CCBlade(AeroBase):
     mu = Float(1.81206e-5, iotype='in', units='kg/(m*s)', desc='dynamic viscosity of air')
     shearExp = Float(0.2, iotype='in', desc='shear exponent')
     nSector = Int(4, iotype='in', desc='number of sectors to divide rotor face into in computing thrust and power')
+    tiploss = Bool(True, iotype='in', desc='include Prandtl tip loss model')
+    hubloss = Bool(True, iotype='in', desc='include Prandtl hub loss model')
+    wakerotation = Bool(True, iotype='in', desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
+    usecd = Bool(True, iotype='in', desc='use drag coefficient in computing induction factors')
 
     missing_deriv_policy = 'assume_zero'
 
@@ -199,7 +203,8 @@ class CCBlade(AeroBase):
 
         self.ccblade = CCBlade_PY(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
             self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hubHt,
-            self.nSector, derivatives=True)
+            self.nSector, tiploss=self.tiploss, hubloss=self.hubloss, wakerotation=self.wakerotation,
+            usecd=self.usecd, derivatives=True)
 
 
         if self.run_case == 'power':
@@ -487,6 +492,10 @@ def common_io_with_ccblade(assembly, varspeed, varpitch, cdf_type):
     assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air'))
     assembly.add('shearExp', Float(0.2, iotype='in', desc='shear exponent'))
     assembly.add('nSector', Int(4, iotype='in', desc='number of sectors to divide rotor face into in computing thrust and power'))
+    assembly.add('tiploss', Bool(True, iotype='in', desc='include Prandtl tip loss model'))
+    assembly.add('hubloss', Bool(True, iotype='in', desc='include Prandtl hub loss model'))
+    assembly.add('wakerotation', Bool(True, iotype='in', desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)'))
+    assembly.add('usecd', Bool(True, iotype='in', desc='use drag coefficient in computing induction factors'))
     assembly.add('npts_coarse_power_curve', Int(20, iotype='in', desc='number of points to evaluate aero analysis at'))
     assembly.add('npts_spline_power_curve', Int(200, iotype='in', desc='number of points to use in fitting spline to power curve'))
     assembly.add('AEP_loss_factor', Float(1.0, iotype='in', desc='availability and other losses (soiling, array, etc.)'))
@@ -558,6 +567,10 @@ def common_configure_with_ccblade(assembly, varspeed, varpitch, cdf_type):
     assembly.connect('mu', 'analysis.mu')
     assembly.connect('shearExp', 'analysis.shearExp')
     assembly.connect('nSector', 'analysis.nSector')
+    assembly.connect('tiploss', 'analysis.tiploss')
+    assembly.connect('hubloss', 'analysis.hubloss')
+    assembly.connect('wakerotation', 'analysis.wakerotation')
+    assembly.connect('usecd', 'analysis.usecd')
 
     # connections to dt
     assembly.connect('drivetrainType', 'dt.drivetrainType')
@@ -627,9 +640,28 @@ class RotorAeroFSFPWithCCBlade(Assembly):
 
 if __name__ == '__main__':
 
-    rotor = CCBlade()
+    from rotoraero import RotorAeroVS
 
-    basepath = '/Users/sning/Dropbox/NREL/5MW_files/5MW_AFFiles/'
+    # ---------- inputs ---------------
+
+    # geometry
+    r = np.array([2.8667, 5.6000, 8.3333, 11.7500, 15.8500, 19.9500, 24.0500,
+                  28.1500, 32.2500, 36.3500, 40.4500, 44.5500, 48.6500, 52.7500,
+                  56.1667, 58.9000, 61.6333])
+    chord = np.array([3.542, 3.854, 4.167, 4.557, 4.652, 4.458, 4.249, 4.007, 3.748,
+                      3.502, 3.256, 3.010, 2.764, 2.518, 2.313, 2.086, 1.419])
+    theta = np.array([13.308, 13.308, 13.308, 13.308, 11.480, 10.162, 9.011, 7.795,
+                      6.544, 5.361, 4.188, 3.125, 2.319, 1.526, 0.863, 0.370, 0.106])
+    Rhub = 1.5
+    Rtip = 63.0
+    hubheight = 80.0
+    precone = 2.5
+    tilt = -5.0
+    yaw = 0.0
+    B = 3
+
+    # airfoils
+    basepath = '/Users/Andrew/Dropbox/NREL/5MW_files/5MW_AFFiles/'
 
     # load all airfoils
     airfoil_types = [0]*8
@@ -645,248 +677,102 @@ if __name__ == '__main__':
     # place at appropriate radial stations
     af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
 
-    n = len(af_idx)
+    n = len(r)
     af = [0]*n
     for i in range(n):
         af[i] = airfoil_types[af_idx[i]]
 
-    rotor.airfoil_files = af
+    # atmosphere
+    rho = 1.225
+    mu = 1.81206e-5
+    shearExp = 0.2
+    Ubar = 6.0
 
-    rotor.r = np.array([2.86669974, 5.600000205, 8.333300055, 11.750000205, 15.849999795, 19.95, 24.050000205, 28.149999795, 32.25, 36.350000205, 40.449999795, 44.55, 48.650000205, 52.749999795, 56.166699945, 58.899999795, 61.63330026])
-    rotor.chord = np.array([1.29801429437, 2.95956835399, 4.29299999839, 5.22615019426, 5.22661111861, 5.02195005066, 4.73981259164, 4.42166411701, 4.10896985325, 3.84319517353, 3.64513202348, 3.45173949172, 3.25853915912, 3.070238291, 2.92045812232, 2.80727048318, 2.70149043003])
-    rotor.theta = np.array([13.59296394, 13.59296394, 13.59296394, 13.59296394, 11.2964233373, 9.24557596228, 7.60108414429, 6.52360996893, 5.94717213692, 5.49449306442, 5.10231711091, 4.71545488279, 4.29625516993, 3.87325100539, 3.52219867675, 3.24337090198, 2.9671411824])
-    rotor.Rhub = 1.5
-    rotor.Rtip = 63.0
-    rotor.hubHt = 80.0
-    rotor.precone = 2.5
-    rotor.tilt = -5.0
-    rotor.yaw = 0.0
-    rotor.B = 3
-    rotor.rho = 1.225
-    rotor.mu = 1.81206e-05
-    rotor.shearExp = 0.2
-    rotor.nSector = 4
-
-    rotor.run_case = 'power'
-    rotor.Uhub = np.array([3.0])
-    rotor.Omega = np.array([3.55923438865])
-    rotor.pitch = np.array([0.0])
+    # operational conditions
+    Vin = 3.0
+    Vout = 25.0
+    ratedPower = 5e6
+    minOmega = 0.0
+    maxOmega = 12.0
+    tsr_opt = 7.55
+    pitch_opt = 0.0
 
 
+    # options
+    nSectors_power_integration = 4
+    tsr_sweep_step_size = 0.25
+    npts_power_curve = 200
+    drivetrainType = 'geared'
+    AEP_loss_factor = 1.0
 
-    # Tvec = []
-    # c0 = rotor.chord[15]
-    # mvec = np.linspace(.9999, 1.0001, 20)
-    # for multiplier in mvec:
-    # # multiplier = 1.00001
-    #     rotor.set('chord', c0 * multiplier, index=[15])
+    # -------------------------
 
-    #     rotor.run()
-    #     Tvec.append(rotor.T[0])
 
-    # import matplotlib.pyplot as plt
-    # plt.plot(mvec, Tvec, '-o')
-    # plt.show()
+    # OpenMDAO setup
 
-    # exit()
+    rotor = RotorAeroVS()
+    rotor.replace('geom', CCBladeGeometry())
+    rotor.replace('analysis', CCBlade())
+    rotor.replace('dt', CSMDrivetrain())
+    rotor.replace('cdf', RayleighCDF())
 
-    rotor.run_case = 'loads'
+    # geometry
+    rotor.geom.Rtip = Rtip
+    rotor.geom.precone = precone
 
-    rotor.V_load = 3.0
-    rotor.Omega_load = 3.55923438865
-    rotor.pitch_load = 0.0
-    rotor.azimuth_load = 270.0
+    # aero analysis
 
-    c0 = rotor.chord[15]
-    vector = np.linspace(.99, 1.01, 20)
-    output1 = []
-    output2 = []
-    output3 = []
-    output4 = []
-    output5 = []
-    output6 = []
-    for multiplier in vector:
-        rotor.set('chord', c0 * multiplier, index=[15])
+    rotor.analysis.r = r
+    rotor.analysis.chord = chord
+    rotor.analysis.theta = theta
+    rotor.analysis.Rhub = Rhub
+    rotor.analysis.Rtip = Rtip
+    rotor.analysis.hubHt = hubheight
+    rotor.analysis.airfoil_files = af
+    rotor.analysis.precone = precone
+    rotor.analysis.tilt = tilt
+    rotor.analysis.yaw = yaw
+    rotor.analysis.B = B
+    rotor.analysis.rho = rho
+    rotor.analysis.mu = mu
+    rotor.analysis.shearExp = shearExp
+    rotor.analysis.nSector = nSectors_power_integration
 
-        rotor.run()
-        output1.append(rotor.loads.Px[15])
-        output2.append(rotor.loads.Px[16])
-        output3.append(rotor.loads.Px[17])
 
-        output4.append(rotor.loads.Py[15])
-        output5.append(rotor.loads.Py[16])
-        output6.append(rotor.loads.Py[17])
-        print multiplier
+    # drivetrain efficiency
+    rotor.dt.drivetrainType = drivetrainType
 
-    from myutilities import printArray
-    printArray(output2, name='output2')
+    # CDF
+    rotor.cdf.xbar = Ubar
+
+    # other parameters
+    # rotor.rho = rho
+
+    rotor.control.Vin = Vin
+    rotor.control.Vout = Vout
+    rotor.control.ratedPower = ratedPower
+    rotor.control.minOmega = minOmega
+    rotor.control.maxOmega = maxOmega
+    rotor.control.tsr = tsr_opt
+    rotor.control.pitch = pitch_opt
+
+    rotor.run()
+
+    print rotor.AEP
+
+    # print len(rotor.V)
+
+    rc = rotor.ratedConditions
+    print rc.V
+    print rc.Omega
+    print rc.pitch
+    print rc.T
+    print rc.Q
+
+    print rotor.diameter
 
     import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(vector, output1, '-o')
-    plt.figure()
-    plt.plot(vector, output2, '-o')
-    # plt.figure()
-    # plt.plot(vector, output3, '-o')
-    # plt.figure()
-    # plt.plot(vector, output4, '-o')
-    # plt.figure()
-    # plt.plot(vector, output5, '-o')
-    # plt.figure()
-    # plt.plot(vector, output6, '-o')
+    plt.plot(rotor.V, rotor.P/1e6)
     plt.show()
-
-# r = np.array([2.86669974, 5.600000205, 8.333300055, 11.750000205, 15.849999795, 19.95, 24.050000205, 28.149999795, 32.25, 36.350000205, 40.449999795, 44.55, 48.650000205, 52.749999795, 56.166699945, 58.899999795, 61.63330026])
-# chord = np.array([1.29801429437, 2.95956835399, 4.29299999839, 5.22615019426, 5.22661111861, 5.02195005066, 4.73981259164, 4.42166411701, 4.10896985325, 3.84319517353, 3.64513202348, 3.45173949172, 3.25853915912, 3.070238291, 2.92045812232, 2.80730167507, 2.70149043003])
-# theta = np.array([13.59296394, 13.59296394, 13.59296394, 13.59296394, 11.2964233373, 9.24557596228, 7.60108414429, 6.52360996893, 5.94717213692, 5.49449306442, 5.10231711091, 4.71545488279, 4.29625516993, 3.87325100539, 3.52219867675, 3.24337090198, 2.9671411824])
-# Rhub = 1.5
-# Rtip = 63.0
-# hubHt = 80.0
-# precone = 2.5
-# tilt = -5.0
-# yaw = 0.0
-# B = 3
-# rho = 1.225
-# mu = 1.81206e-05
-# shearExp = 0.2
-# nSector = 4
-
-
-# if __name__ == '__main__':
-
-#     from rotoraero import RotorAeroVS
-
-#     # ---------- inputs ---------------
-
-#     # geometry
-#     r = np.array([2.8667, 5.6000, 8.3333, 11.7500, 15.8500, 19.9500, 24.0500,
-#                   28.1500, 32.2500, 36.3500, 40.4500, 44.5500, 48.6500, 52.7500,
-#                   56.1667, 58.9000, 61.6333])
-#     chord = np.array([3.542, 3.854, 4.167, 4.557, 4.652, 4.458, 4.249, 4.007, 3.748,
-#                       3.502, 3.256, 3.010, 2.764, 2.518, 2.313, 2.086, 1.419])
-#     theta = np.array([13.308, 13.308, 13.308, 13.308, 11.480, 10.162, 9.011, 7.795,
-#                       6.544, 5.361, 4.188, 3.125, 2.319, 1.526, 0.863, 0.370, 0.106])
-#     Rhub = 1.5
-#     Rtip = 63.0
-#     hubheight = 80.0
-#     precone = 2.5
-#     tilt = -5.0
-#     yaw = 0.0
-#     B = 3
-
-#     # airfoils
-#     basepath = '/Users/Andrew/Dropbox/NREL/5MW_files/5MW_AFFiles/'
-
-#     # load all airfoils
-#     airfoil_types = [0]*8
-#     airfoil_types[0] = basepath + 'Cylinder1.dat'
-#     airfoil_types[1] = basepath + 'Cylinder2.dat'
-#     airfoil_types[2] = basepath + 'DU40_A17.dat'
-#     airfoil_types[3] = basepath + 'DU35_A17.dat'
-#     airfoil_types[4] = basepath + 'DU30_A17.dat'
-#     airfoil_types[5] = basepath + 'DU25_A17.dat'
-#     airfoil_types[6] = basepath + 'DU21_A17.dat'
-#     airfoil_types[7] = basepath + 'NACA64_A17.dat'
-
-#     # place at appropriate radial stations
-#     af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
-
-#     n = len(r)
-#     af = [0]*n
-#     for i in range(n):
-#         af[i] = airfoil_types[af_idx[i]]
-
-#     # atmosphere
-#     rho = 1.225
-#     mu = 1.81206e-5
-#     shearExp = 0.2
-#     Ubar = 6.0
-
-#     # operational conditions
-#     Vin = 3.0
-#     Vout = 25.0
-#     ratedPower = 5e6
-#     minOmega = 0.0
-#     maxOmega = 12.0
-#     tsr_opt = 7.55
-#     pitch_opt = 0.0
-
-
-#     # options
-#     nSectors_power_integration = 4
-#     tsr_sweep_step_size = 0.25
-#     npts_power_curve = 200
-#     drivetrainType = 'geared'
-#     AEP_loss_factor = 1.0
-
-#     # -------------------------
-
-
-#     # OpenMDAO setup
-
-#     rotor = RotorAeroVS()
-#     rotor.replace('geom', CCBladeGeometry())
-#     rotor.replace('analysis', CCBlade())
-#     rotor.replace('dt', CSMDrivetrain())
-#     rotor.replace('cdf', RayleighCDF())
-
-#     # geometry
-#     rotor.geom.Rtip = Rtip
-#     rotor.geom.precone = precone
-
-#     # aero analysis
-
-#     rotor.analysis.r = r
-#     rotor.analysis.chord = chord
-#     rotor.analysis.theta = theta
-#     rotor.analysis.Rhub = Rhub
-#     rotor.analysis.Rtip = Rtip
-#     rotor.analysis.hubHt = hubheight
-#     rotor.analysis.airfoil_files = af
-#     rotor.analysis.precone = precone
-#     rotor.analysis.tilt = tilt
-#     rotor.analysis.yaw = yaw
-#     rotor.analysis.B = B
-#     rotor.analysis.rho = rho
-#     rotor.analysis.mu = mu
-#     rotor.analysis.shearExp = shearExp
-#     rotor.analysis.nSector = nSectors_power_integration
-
-
-#     # drivetrain efficiency
-#     rotor.dt.drivetrainType = drivetrainType
-
-#     # CDF
-#     rotor.cdf.xbar = Ubar
-
-#     # other parameters
-#     # rotor.rho = rho
-
-#     rotor.control.Vin = Vin
-#     rotor.control.Vout = Vout
-#     rotor.control.ratedPower = ratedPower
-#     rotor.control.minOmega = minOmega
-#     rotor.control.maxOmega = maxOmega
-#     rotor.control.tsr = tsr_opt
-#     rotor.control.pitch = pitch_opt
-
-#     rotor.run()
-
-#     print rotor.AEP
-
-#     # print len(rotor.V)
-
-#     rc = rotor.ratedConditions
-#     print rc.V
-#     print rc.Omega
-#     print rc.pitch
-#     print rc.T
-#     print rc.Q
-
-#     print rotor.diameter
-
-#     import matplotlib.pyplot as plt
-#     plt.plot(rotor.V, rotor.P/1e6)
-#     plt.show()
 
 
