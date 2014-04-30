@@ -19,7 +19,7 @@ from harpopt import HARPOptCCBlade
 varspeed = True
 varpitch = True
 cdf_type = 'rayleigh'
-optimizer = 'psqp'
+optimizer = 'snopt'
 # ------------------------
 
 # ---- instantiate rotor object -------
@@ -107,6 +107,10 @@ rotor.nSector = 4  # (Int): number of sectors to divide rotor face into in compu
 rotor.npts_coarse_power_curve = 20  # (Int): number of points to evaluate aero analysis at
 rotor.npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
 rotor.AEP_loss_factor = 1.0  # (Float): availability and other losses (soiling, array, etc.)
+rotor.tiploss = True  # (Bool): include Prandtl tip loss model
+rotor.hubloss = True  # (Bool): include Prandtl hub loss model
+rotor.wakerotation = True  # (Bool): include effect of wake rotation (i.e., tangential induction factor is nonzero)
+rotor.usecd = True  # (Bool): use drag coefficient in computing induction factors
 # -------------------------------------
 
 
@@ -114,6 +118,10 @@ rotor.AEP_loss_factor = 1.0  # (Float): availability and other losses (soiling, 
 
 
 # run one iteration to get baseline for normalization
+rotor.driver.config_parameters()  # all these extras for SLSQP
+rotor.driver.update_parameters()
+rotor.driver.start_iteration()
+
 rotor.driver.run_iteration()
 rotor.AEP0 = rotor.aep.AEP
 rotor.driver.run_iteration()
